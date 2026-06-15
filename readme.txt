@@ -421,3 +421,9 @@ Coding competition board
 SIWES/Industrial Training opportunities board
 Final year project repository
 "Who's in Class Today" attendance feature
+
+
+
+git add .
+git commit -m "Added CPE C28 Firebase student upload system"
+git push origin main
