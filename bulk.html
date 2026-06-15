@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>C28 Bulk Upload – Admin Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --brand: #1a56db; --brand-dark: #1040b0; --brand-light: #e8f0fe;
+    --surface: #ffffff; --surface2: #f8fafc; --surface3: #f1f5f9;
+    --border: #e2e8f0; --text: #0f172a; --text2: #475569; --text3: #94a3b8;
+    --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+    --radius: 12px; --radius-lg: 20px;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--surface2); color: var(--text); min-height: 100vh; padding: 32px 16px; }
+
+  .page { max-width: 960px; margin: 0 auto; }
+
+  .header { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-badge { width: 44px; height: 44px; border-radius: 12px; background: var(--brand); display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; color: #fff; }
+  .header h1 { font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--text); }
+  .header p { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .admin-badge { background: #fef3c7; color: #92400e; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px; border: 1px solid #fde68a; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; text-align: center; }
+  .stat-num { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--text); line-height: 1; }
+  .stat-num.green { color: var(--success); }
+  .stat-num.red { color: var(--danger); }
+  .stat-num.blue { color: var(--brand); }
+  .stat-num.amber { color: var(--warning); }
+  .stat-label { font-size: 12px; color: var(--text3); margin-top: 5px; font-weight: 500; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 20px; }
+  .card-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .card-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.6; }
+
+  .upload-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--brand); color: #fff; font-family: inherit;
+    font-size: 15px; font-weight: 700; padding: 14px 32px;
+    border: none; border-radius: 12px; cursor: pointer;
+    transition: all 0.2s; width: 100%; justify-content: center;
+  }
+  .upload-btn:hover:not(:disabled) { background: var(--brand-dark); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,86,219,0.3); }
+  .upload-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  .upload-btn.loading { position: relative; color: transparent; pointer-events: none; }
+  .upload-btn.loading::after { content: ''; position: absolute; width: 20px; height: 20px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .btn-danger { background: var(--danger); color: #fff; font-family: inherit; font-size: 13px; font-weight: 600; padding: 9px 20px; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-secondary { background: var(--surface2); color: var(--text2); font-family: inherit; font-size: 13px; font-weight: 600; padding: 9px 20px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+  .btn-secondary:hover { background: var(--surface3); color: var(--text); }
+
+  /* PROGRESS */
+  .progress-wrap { margin: 20px 0; display: none; }
+  .progress-wrap.show { display: block; }
+  .progress-bar-bg { height: 10px; background: var(--surface3); border-radius: 999px; overflow: hidden; margin-bottom: 8px; }
+  .progress-bar-fill { height: 100%; background: var(--brand); border-radius: 999px; transition: width 0.3s ease; width: 0%; }
+  .progress-text { font-size: 13px; color: var(--text2); display: flex; justify-content: space-between; }
+
+  /* LOG */
+  .log-wrap { margin-top: 20px; }
+  .log-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+  .log-title { font-size: 14px; font-weight: 700; color: var(--text); }
+  .log-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-btn { font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 999px; border: 1.5px solid var(--border); background: var(--surface2); cursor: pointer; color: var(--text2); transition: all 0.15s; }
+  .filter-btn.active { border-color: var(--brand); background: var(--brand-light); color: var(--brand); }
+  .filter-btn.success-f.active { border-color: var(--success); background: #d1fae5; color: #065f46; }
+  .filter-btn.error-f.active { border-color: var(--danger); background: #fee2e2; color: #991b1b; }
+  .filter-btn.skip-f.active { border-color: var(--warning); background: #fef3c7; color: #92400e; }
+
+  .log-box {
+    background: #0f172a; border-radius: var(--radius); padding: 16px;
+    height: 380px; overflow-y: auto; font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px; line-height: 1.8;
+    border: 1px solid #1e293b;
+  }
+  .log-box::-webkit-scrollbar { width: 6px; }
+  .log-box::-webkit-scrollbar-track { background: transparent; }
+  .log-box::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  .log-entry { display: flex; gap: 10px; padding: 2px 0; align-items: flex-start; }
+  .log-entry.hide { display: none; }
+  .log-time { color: #475569; flex-shrink: 0; }
+  .log-icon { flex-shrink: 0; }
+  .log-msg { flex: 1; word-break: break-word; }
+  .log-entry.success .log-msg { color: #34d399; }
+  .log-entry.error .log-msg { color: #f87171; }
+  .log-entry.skip .log-msg { color: #fbbf24; }
+  .log-entry.info .log-msg { color: #94a3b8; }
+  .log-entry.header .log-msg { color: #60a5fa; font-weight: 500; }
+
+  /* ROSTER TABLE */
+  .roster-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: var(--surface3); color: var(--text2); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .status-pill { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+  .pill-pending { background: var(--surface3); color: var(--text3); }
+  .pill-uploading { background: var(--brand-light); color: var(--brand); }
+  .pill-done { background: #d1fae5; color: #065f46; }
+  .pill-error { background: #fee2e2; color: #991b1b; }
+  .pill-skip { background: #fef3c7; color: #92400e; }
+  .sn { color: var(--text3); font-weight: 500; }
+  .matric-code { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--brand); }
+
+  .info-banner { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius); padding: 14px 18px; font-size: 13px; color: #1e40af; line-height: 1.7; margin-bottom: 20px; }
+  .info-banner strong { font-weight: 700; }
+
+  .action-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  @media (max-width: 600px) { .card { padding: 20px 16px; } .header { padding: 20px 16px; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-badge">C28</div>
+      <div>
+        <h1>CPE C28 – Bulk Student Upload</h1>
+        <p>One-time admin tool to seed all 85 students into Firestore</p>
+      </div>
+    </div>
+    <span class="admin-badge">⚡ Admin Only</span>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-num blue" id="statTotal">85</div><div class="stat-label">Total Students</div></div>
+    <div class="stat-box"><div class="stat-num green" id="statDone">0</div><div class="stat-label">Uploaded</div></div>
+    <div class="stat-box"><div class="stat-num amber" id="statSkip">0</div><div class="stat-label">Skipped (exists)</div></div>
+    <div class="stat-box"><div class="stat-num red" id="statFail">0</div><div class="stat-label">Failed</div></div>
+    <div class="stat-box"><div class="stat-num" id="statPending">85</div><div class="stat-label">Pending</div></div>
+  </div>
+
+  <!-- UPLOAD CARD -->
+  <div class="card">
+    <div class="card-title">🚀 Upload C28 Student Roster</div>
+    <div class="card-sub">Clicking the button below will upload all 85 students to Firestore. Each student gets a <code>users</code> document with their name, surname (for login), matric number, role, and account status. Students who already exist (matched by matric number) will be skipped automatically.</div>
+
+    <div class="info-banner">
+      <strong>What gets created per student:</strong><br/>
+      • <code>users/{auto-id}</code> document with name, surname, matric number, level, department, role<br/>
+      • Login key: <strong>Matric Number + Surname</strong> (lowercase, trimmed)<br/>
+      • Status: <strong>active</strong> · Role: <strong>student</strong> · Account ready for first login
+    </div>
+
+    <button class="upload-btn" id="uploadBtn" onclick="startUpload()">
+      ⬆️ Upload All 85 Students to Firebase
+    </button>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+      <div class="progress-text">
+        <span id="progressLabel">Uploading...</span>
+        <span id="progressPercent">0%</span>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="log-wrap">
+      <div class="log-header">
+        <div class="log-title">📋 Upload Log</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">
+          <div class="log-filters">
+            <button class="filter-btn active" onclick="filterLog('all', this)">All</button>
+            <button class="filter-btn success-f" onclick="filterLog('success', this)">✅ Success</button>
+            <button class="filter-btn skip-f" onclick="filterLog('skip', this)">⚠️ Skipped</button>
+            <button class="filter-btn error-f" onclick="filterLog('error', this)">❌ Errors</button>
+          </div>
+          <button class="btn-secondary" onclick="clearLog()">Clear</button>
+        </div>
+      </div>
+      <div class="log-box" id="logBox">
+        <div class="log-entry info"><span class="log-time">--:--:--</span><span class="log-icon">💤</span><span class="log-msg">Waiting for upload to start...</span></div>
+      </div>
+    </div>
+
+    <div class="action-row" style="margin-top:16px">
+      <button class="btn-danger" id="clearDbBtn" onclick="confirmClearAll()" style="display:none">🗑️ Clear All C28 Users</button>
+      <button class="btn-secondary" onclick="checkExisting()">🔍 Check Existing Records</button>
+    </div>
+  </div>
+
+  <!-- ROSTER PREVIEW -->
+  <div class="card">
+    <div class="card-title">👥 Student Roster Preview</div>
+    <div class="card-sub">All 85 students queued for upload. Status updates in real-time during upload.</div>
+    <div class="roster-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Full Name</th>
+            <th>Matric Number</th>
+            <th>Surname (Login Key)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="rosterBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { getFirestore, collection, query, where, getDocs, setDoc, doc, serverTimestamp, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDzk3i-ZMIxxdJ5IIrJrnl5cFt_iYTZVtc",
+    authDomain: "mynet-ef1b0.firebaseapp.com",
+    projectId: "mynet-ef1b0",
+    storageBucket: "mynet-ef1b0.firebasestorage.app",
+    messagingSenderId: "815047200723",
+    appId: "1:815047200723:web:c2ba17be476566ec356926",
+    measurementId: "G-08Y925DCYQ"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window._db = db;
+  window._fs = { collection, query, where, getDocs, setDoc, doc, serverTimestamp, writeBatch, deleteDoc };
+</script>
+
+<script>
+// ============================================================
+// STUDENT ROSTER DATA
+// ============================================================
+const STUDENTS = [
+  { sn:1,  fullName:"Abayomi Joshua",                  matric:"CPE/24/9854" },
+  { sn:2,  fullName:"Abioye Wisdom",                   matric:"CPE/24/9855" },
+  { sn:3,  fullName:"Abolusoro Stephen",               matric:"CPE/24/9856" },
+  { sn:4,  fullName:"Adamolekun David",                matric:"CPE/24/9857" },
+  { sn:5,  fullName:"Adebisi Testimony",               matric:"CPE/24/9858" },
+  { sn:6,  fullName:"Adebola Daniel",                  matric:"CPE/24/9859" },
+  { sn:7,  fullName:"Adedire Adetunbi Victor",         matric:"CPE/24/9861" },
+  { sn:8,  fullName:"Adegbogun Emmanuel",              matric:"CPE/24/9862" },
+  { sn:9,  fullName:"Adekanbi Jesufemi",               matric:"CPE/25/8116" },
+  { sn:10, fullName:"Adekolu Olumide",                 matric:"CPE/24/9863" },
+  { sn:11, fullName:"Adekunle Joshua",                 matric:"CPE/24/9864" },
+  { sn:12, fullName:"Adelopo Godson Adeola",           matric:"CPE/24/9865" },
+  { sn:13, fullName:"Aderibigbe Adelola Favour",       matric:"CPE/24/9866" },
+  { sn:14, fullName:"Agboola Ayobami Israel",          matric:"CPE/24/9867" },
+  { sn:15, fullName:"Agboola Oluwaferanmi",            matric:"CPE/25/8129" },
+  { sn:16, fullName:"Aguosuo Wisdom",                  matric:"CPE/24/9868" },
+  { sn:17, fullName:"Ajayi Israel",                    matric:"CPE/24/9869" },
+  { sn:18, fullName:"Ajose Rebecca",                   matric:"CPE/24/9871" },
+  { sn:19, fullName:"Akande Imoleayo",                 matric:"CPE/24/9872" },
+  { sn:20, fullName:"Akhigbe Omoayena",                matric:"CPE/24/9873" },
+  { sn:21, fullName:"Akinbode Michael",                matric:"CPE/24/9874" },
+  { sn:22, fullName:"Akinboyewa Joseph",               matric:"CPE/25/8132" },
+  { sn:23, fullName:"Akinkuotu Demilade",              matric:"CPE/24/9875" },
+  { sn:24, fullName:"Akinlo Nifemi",                   matric:"CPE/24/9876" },
+  { sn:25, fullName:"Akinola Collins",                 matric:"CPE/24/9877" },
+  { sn:26, fullName:"Akinola Fopefoluwa",              matric:"CPE/24/9878" },
+  { sn:27, fullName:"Akinsola Kehinde",                matric:"CPE/24/9879" },
+  { sn:28, fullName:"Akinyemi Oluwafunmi",             matric:"CPE/24/9880" },
+  { sn:29, fullName:"Alabi Ogooluwa",                  matric:"CPE/24/9881" },
+  { sn:30, fullName:"Aladejebi Oluwasemilore",         matric:"CPE/24/9882" },
+  { sn:31, fullName:"Alake Abraham",                   matric:"CPE/24/9883" },
+  { sn:32, fullName:"Aliu Victor",                     matric:"CPE/24/9884" },
+  { sn:33, fullName:"Aregbesola Daniel",               matric:"CPE/24/9885" },
+  { sn:34, fullName:"Aroh Ngozichukwu",                matric:"CPE/24/9886" },
+  { sn:35, fullName:"Arosomade Daniel",                matric:"CPE/24/2351" },
+  { sn:36, fullName:"Aturamu Taiwo",                   matric:"CPE/24/9887" },
+  { sn:37, fullName:"Ayileke Jeremiah",                matric:"CPE/24/9888" },
+  { sn:38, fullName:"Ayinla Praise",                   matric:"CPE/24/9889" },
+  { sn:39, fullName:"Badejo Oludare Okikolu",          matric:"CPE/24/9890" },
+  { sn:40, fullName:"Bamidele Caleb",                  matric:"CPE/24/9891" },
+  { sn:41, fullName:"Dare-Lasisi Hamid",               matric:"CPE/24/9894" },
+  { sn:42, fullName:"Dawodu Benjamin",                 matric:"CPE/24/3053" },
+  { sn:43, fullName:"Emmanuel Irewole",                matric:"CPE/24/9896" },
+  { sn:44, fullName:"Enechukwu Emmanuel",              matric:"CPE/24/9898" },
+  { sn:45, fullName:"Famiwole Timilehin",              matric:"CPE/24/9899" },
+  { sn:46, fullName:"Giwa Boyinsola Deborah",          matric:"CPE/24/9900" },
+  { sn:47, fullName:"Itiola Johnson",                  matric:"CPE/24/2968" },
+  { sn:48, fullName:"Jegede Promise",                  matric:"CPE/24/9901" },
+  { sn:49, fullName:"Jesufemi Joshua",                 matric:"CPE/24/9902" },
+  { sn:50, fullName:"Lateef Mukhtar",                  matric:"CPE/24/9903" },
+  { sn:51, fullName:"Light Annie Iretunde",            matric:"CPE/25/8160" },
+  { sn:52, fullName:"Muhammed Hanifa",                 matric:"CPE/24/9904" },
+  { sn:53, fullName:"Nwoda Peter",                     matric:"CPE/24/9906" },
+  { sn:54, fullName:"Obaike James",                    matric:"CPE/24/9907" },
+  { sn:55, fullName:"Obasi-Kalu Peace",                matric:"CPE/25/8165" },
+  { sn:56, fullName:"Ogein Oluwatobiloba",             matric:"CPE/24/9908" },
+  { sn:57, fullName:"Ogundeko Toluwalase",             matric:"CPE/24/9909" },
+  { sn:58, fullName:"Oheiku Cyprian",                  matric:"CPE/24/9910" },
+  { sn:59, fullName:"Okibe Chisom",                    matric:"CPE/24/9911" },
+  { sn:60, fullName:"Olaniyan Martins",                matric:"CPE/24/9912" },
+  { sn:61, fullName:"Olonikadi John",                  matric:"CPE/24/9913" },
+  { sn:62, fullName:"Olusegun Chinasa",                matric:"CPE/24/9914" },
+  { sn:63, fullName:"Oluwakoya Daniel",                matric:"CPE/25/8179" },
+  { sn:64, fullName:"Oluwayemi Ogooluwatanlorimi",     matric:"CPE/25/8181" },
+  { sn:65, fullName:"Oluwayinka Temidayo",             matric:"CPE/24/9915" },
+  { sn:66, fullName:"Omidiji Taiwo Enoch",             matric:"CPE/24/9916" },
+  { sn:67, fullName:"Omosehin David",                  matric:"CPE/24/9918" },
+  { sn:68, fullName:"Osove David",                     matric:"CPE/24/9920" },
+  { sn:69, fullName:"Owen Dede Oluwaseyi",             matric:"CPE/24/9895" },
+  { sn:70, fullName:"Owolabi Habeeb",                  matric:"CPE/24/9921" },
+  { sn:71, fullName:"Oyakhire Darlington",             matric:"CPE/24/9922" },
+  { sn:72, fullName:"Oyale Joshua",                    matric:"CPE/24/9897" },
+  { sn:73, fullName:"Oyemomilara Praise",              matric:"CPE/24/9923" },
+  { sn:74, fullName:"Oyerinde Oluwatobi",              matric:"CPE/24/9924" },
+  { sn:75, fullName:"Oyewale Samuel",                  matric:"CPE/25/8188" },
+  { sn:76, fullName:"Rotimi Faith",                    matric:"CPE/25/8189" },
+  { sn:77, fullName:"Sanusi Tomisin",                  matric:"CPE/24/9925" },
+  { sn:78, fullName:"Shoneye Clinton",                 matric:"CPE/24/9926" },
+  { sn:79, fullName:"Sulaimon Abdulquadri",            matric:"CPE/24/9927" },
+  { sn:80, fullName:"Sulaimon Sofiyyah Adebimpe",      matric:"CPE/24/9791" },
+  { sn:81, fullName:"Sunday Raymond James",            matric:"CPE/25/1510" },
+  { sn:82, fullName:"Tijani Abdullahi Bayonle",        matric:"CPE/25/8193" },
+  { sn:83, fullName:"Ugbefu Godwin",                   matric:"CPE/24/2969" },
+  { sn:84, fullName:"Ugwu Cornelius",                  matric:"CPE/24/9928" },
+  { sn:85, fullName:"Umeche Romeo",                    matric:"CPE/24/9929" },
+];
+
+// Parse name into parts
+function parseName(fullName) {
+  const parts = fullName.trim().split(/\s+/);
+  const lastName = parts[0];   // Surname is ALWAYS first in Nigerian naming
+  const firstName = parts[1] || '';
+  const otherName = parts.slice(2).join(' ');
+  return { lastName, firstName, otherName };
+}
+
+// Normalize matric
+function normalizeMatric(matric) {
+  return matric.replace(/\s+/g, '').toUpperCase();
+}
+
+// Build Firestore document for each student
+function buildStudentDoc(student) {
+  const { lastName, firstName, otherName } = parseName(student.fullName);
+  const matric = normalizeMatric(student.matric);
+  return {
+    sn: student.sn,
+    fullName: student.fullName.trim(),
+    firstName,
+    lastName,
+    otherName,
+    surname: lastName.toLowerCase(),            // login key
+    matricNumber: matric,                        // login key
+    matricNormalized: matric.replace(/\//g, '').toLowerCase(),
+    department: 'Computer Engineering',
+    set: 'C28',
+    level: '200',
+    role: 'student',
+    status: 'active',
+    profileComplete: false,
+    photoURL: '',
+    email: '',
+    hasPassword: false,
+    passwordHash: '',
+    phone: '',
+    gender: '',
+    state: '',
+    bio: '',
+    skills: [],
+    interests: [],
+    githubLink: '',
+    linkedinLink: '',
+    portfolioLink: '',
+    lastLogin: null,
+    createdAt: null,   // set server-side
+    updatedAt: null,
+  };
+}
+
+// ============================================================
+// UI STATE
+// ============================================================
+let counts = { done: 0, skip: 0, fail: 0 };
+let currentFilter = 'all';
+let isUploading = false;
+let rowEls = {};   // sn → <tr> element
+
+// Build roster table on load
+function buildRoster() {
+  const tbody = document.getElementById('rosterBody');
+  STUDENTS.forEach(s => {
+    const { lastName } = parseName(s.fullName);
+    const tr = document.createElement('tr');
+    tr.id = 'row-' + s.sn;
+    tr.innerHTML = `
+      <td class="sn">${s.sn}</td>
+      <td style="font-weight:600">${s.fullName}</td>
+      <td class="matric-code">${normalizeMatric(s.matric)}</td>
+      <td style="color:var(--text2)">${lastName.toLowerCase()}</td>
+      <td><span class="status-pill pill-pending" id="pill-${s.sn}">Pending</span></td>
+    `;
+    tbody.appendChild(tr);
+    rowEls[s.sn] = tr;
+  });
+}
+
+function setPill(sn, type) {
+  const pill = document.getElementById('pill-' + sn);
+  if (!pill) return;
+  const map = { uploading:'pill-uploading', done:'pill-done', error:'pill-error', skip:'pill-skip', pending:'pill-pending' };
+  const labels = { uploading:'Uploading…', done:'✓ Done', error:'✗ Error', skip:'⚠ Skipped', pending:'Pending' };
+  pill.className = 'status-pill ' + (map[type] || 'pill-pending');
+  pill.textContent = labels[type] || type;
+}
+
+// ============================================================
+// LOG
+// ============================================================
+function now() {
+  return new Date().toLocaleTimeString('en-GB', { hour12: false });
+}
+
+function log(msg, type = 'info') {
+  const icons = { success:'✅', error:'❌', skip:'⚠️', info:'ℹ️', header:'🔷' };
+  const box = document.getElementById('logBox');
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type}`;
+  if (currentFilter !== 'all' && type !== currentFilter) entry.classList.add('hide');
+  entry.innerHTML = `<span class="log-time">${now()}</span><span class="log-icon">${icons[type]||'·'}</span><span class="log-msg">${msg}</span>`;
+  box.appendChild(entry);
+  box.scrollTop = box.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('logBox').innerHTML = '';
+}
+
+function filterLog(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.log-entry').forEach(e => {
+    if (type === 'all') e.classList.remove('hide');
+    else e.classList.toggle('hide', !e.classList.contains(type));
+  });
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function updateStats() {
+  document.getElementById('statDone').textContent = counts.done;
+  document.getElementById('statSkip').textContent = counts.skip;
+  document.getElementById('statFail').textContent = counts.fail;
+  document.getElementById('statPending').textContent = Math.max(0, 85 - counts.done - counts.skip - counts.fail);
+}
+
+function setProgress(done, total) {
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPercent').textContent = pct + '%';
+  document.getElementById('progressLabel').textContent = `Uploading student ${done} of ${total}…`;
+}
+
+// ============================================================
+// UPLOAD
+// ============================================================
+async function startUpload() {
+  if (isUploading) return;
+  if (!window._db || !window._fs) {
+    log('Firebase not ready yet. Please wait a moment and try again.', 'error');
+    return;
+  }
+
+  const confirmed = confirm(`You are about to upload ${STUDENTS.length} student records to Firestore.\n\nExisting records (matched by matric number) will be SKIPPED.\n\nContinue?`);
+  if (!confirmed) return;
+
+  isUploading = true;
+  counts = { done: 0, skip: 0, fail: 0 };
+  updateStats();
+
+  const btn = document.getElementById('uploadBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  document.getElementById('progressWrap').classList.add('show');
+  clearLog();
+  log(`Starting upload of ${STUDENTS.length} students to Firestore...`, 'header');
+  log(`Collection: users · Set: C28 · Time: ${new Date().toLocaleString()}`, 'info');
+  log('─'.repeat(60), 'info');
+
+  const { collection, query, where, getDocs, setDoc, doc, serverTimestamp } = window._fs;
+  const db = window._db;
+
+  let processed = 0;
+
+  for (const student of STUDENTS) {
+    setPill(student.sn, 'uploading');
+    const matric = normalizeMatric(student.matric);
+
+    try {
+      // Check if already exists
+      const q = query(collection(db, 'users'), where('matricNumber', '==', matric));
+      const snap = await getDocs(q);
+
+      if (!snap.empty) {
+        counts.skip++;
+        setPill(student.sn, 'skip');
+        log(`[${student.sn.toString().padStart(2,'0')}] SKIPPED  — ${student.fullName} (${matric}) already exists`, 'skip');
+      } else {
+        const data = buildStudentDoc(student);
+        data.createdAt = serverTimestamp();
+        data.updatedAt = serverTimestamp();
+
+        // Use matric as document ID (sanitized)
+        const docId = matric.replace(/\//g, '_');
+        await setDoc(doc(db, 'users', docId), data);
+
+        counts.done++;
+        setPill(student.sn, 'done');
+        log(`[${student.sn.toString().padStart(2,'0')}] UPLOADED — ${student.fullName} (${matric}) → doc: ${docId}`, 'success');
+      }
+    } catch (err) {
+      counts.fail++;
+      setPill(student.sn, 'error');
+      log(`[${student.sn.toString().padStart(2,'0')}] ERROR    — ${student.fullName} (${matric}): ${err.message}`, 'error');
+    }
+
+    processed++;
+    setProgress(processed, STUDENTS.length);
+    updateStats();
+
+    // Small delay to avoid hammering Firestore & allow UI to breathe
+    await new Promise(r => setTimeout(r, 80));
+  }
+
+  // DONE
+  log('─'.repeat(60), 'info');
+  log(`Upload complete! ✅ ${counts.done} uploaded · ⚠️ ${counts.skip} skipped · ❌ ${counts.fail} failed`, 'header');
+  if (counts.fail > 0) log(`Check the ❌ Error filter above to see which students failed. You can re-run to retry.`, 'info');
+  if (counts.done > 0) log(`Students can now log in with their Matric Number + Surname at login.html`, 'success');
+
+  document.getElementById('progressLabel').textContent = `Done! ${counts.done} uploaded, ${counts.skip} skipped, ${counts.fail} failed`;
+  document.getElementById('progressFill').style.background = counts.fail > 0 ? 'var(--warning)' : 'var(--success)';
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+  btn.textContent = '🔁 Re-run Upload (skips existing)';
+  document.getElementById('clearDbBtn').style.display = 'inline-block';
+  isUploading = false;
+}
+
+// ============================================================
+// CHECK EXISTING
+// ============================================================
+async function checkExisting() {
+  if (!window._db || !window._fs) { alert('Firebase not ready yet.'); return; }
+  const { collection, getDocs } = window._fs;
+  clearLog();
+  log('Checking existing records in Firestore...', 'header');
+  try {
+    const snap = await getDocs(collection(window._db, 'users'));
+    const existing = new Map();
+    snap.forEach(d => { const data = d.data(); if (data.matricNumber) existing.set(data.matricNumber, d.id); });
+    log(`Found ${existing.size} total user record(s) in Firestore`, 'info');
+
+    let found = 0, missing = 0;
+    STUDENTS.forEach(s => {
+      const matric = normalizeMatric(s.matric);
+      if (existing.has(matric)) {
+        found++;
+        log(`[FOUND]   ${s.fullName} (${matric}) → doc: ${existing.get(matric)}`, 'success');
+      } else {
+        missing++;
+        log(`[MISSING] ${s.fullName} (${matric})`, 'skip');
+      }
+    });
+    log('─'.repeat(60), 'info');
+    log(`Result: ${found} already in DB · ${missing} not yet uploaded`, 'header');
+  } catch(e) {
+    log('Error checking records: ' + e.message, 'error');
+  }
+}
+
+// ============================================================
+// CLEAR ALL (danger)
+// ============================================================
+async function confirmClearAll() {
+  const first = confirm('⚠️ WARNING: This will DELETE all C28 student records from Firestore.\n\nAre you sure?');
+  if (!first) return;
+  const second = prompt('Type DELETE to confirm you want to remove all student records:');
+  if (second !== 'DELETE') { alert('Cancelled.'); return; }
+
+  const { collection, getDocs, deleteDoc } = window._fs;
+  clearLog();
+  log('Deleting all user records...', 'error');
+  try {
+    const snap = await getDocs(collection(window._db, 'users'));
+    let del = 0;
+    for (const d of snap.docs) {
+      await deleteDoc(d.ref);
+      del++;
+      log(`Deleted: ${d.id}`, 'error');
+    }
+    log(`Done. ${del} records deleted.`, 'header');
+    counts = { done: 0, skip: 0, fail: 0 };
+    updateStats();
+    STUDENTS.forEach(s => setPill(s.sn, 'pending'));
+  } catch(e) {
+    log('Error during deletion: ' + e.message, 'error');
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+buildRoster();
+updateStats();
+</script>
+</body>
+</html>
