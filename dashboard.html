@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard – CPE Connect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --brand: #1a56db; --brand-dark: #1040b0; --brand-light: #dbeafe;
+  --bg: #f1f5f9; --surface: #fff; --border: #e2e8f0;
+  --text: #0f172a; --text2: #475569; --text3: #94a3b8;
+  --success: #10b981; --radius: 14px;
+}
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* NAV */
+nav {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-badge {
+  width: 34px; height: 34px; border-radius: 9px; background: var(--brand);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: #fff;
+}
+.nav-name { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+.nav-right { display: flex; align-items: center; gap: 10px; }
+.nav-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--brand-light); border: 2px solid var(--brand);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px; color: var(--brand);
+  overflow: hidden; cursor: pointer;
+}
+.nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.btn-logout {
+  font-size: 13px; font-weight: 600; color: var(--text2);
+  background: none; border: 1.5px solid var(--border);
+  border-radius: 8px; padding: 6px 14px; cursor: pointer;
+  font-family: inherit; transition: all 0.2s;
+}
+.btn-logout:hover { background: var(--bg); color: var(--text); }
+
+/* MAIN */
+.main { max-width: 920px; margin: 0 auto; padding: 32px 20px; }
+
+/* WELCOME CARD */
+.welcome {
+  background: var(--brand);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  flex-wrap: wrap;
+  position: relative; overflow: hidden;
+}
+.welcome::before {
+  content: ''; position: absolute;
+  width: 280px; height: 280px; border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  bottom: -80px; right: -60px;
+}
+.welcome-left { position: relative; z-index: 1; }
+.welcome-left h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 6px;
+}
+.welcome-left p { font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.6; }
+.welcome-tag {
+  display: inline-block;
+  background: rgba(255,255,255,0.15);
+  color: #fff; font-size: 11px; font-weight: 700;
+  padding: 4px 12px; border-radius: 999px;
+  margin-top: 10px;
+}
+.welcome-avatar {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; font-weight: 700; color: #fff;
+  border: 3px solid rgba(255,255,255,0.4);
+  overflow: hidden; flex-shrink: 0; position: relative; z-index: 1;
+}
+.welcome-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* STATS */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px;
+}
+.stat-n { font-family: 'Space Grotesk', sans-serif; font-size: 1.7rem; font-weight: 700; color: var(--text); }
+.stat-n.blue { color: var(--brand); }
+.stat-n.green { color: var(--success); }
+.stat-l { font-size: 12px; color: var(--text3); margin-top: 4px; font-weight: 500; }
+
+/* GRID */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+
+/* CARD */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px 24px;
+}
+.card-head { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 16px; }
+
+/* QUICK ACTIONS */
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.action-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: 10px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  font-size: 13px; font-weight: 600; color: var(--text2);
+  cursor: pointer; transition: all 0.2s; text-decoration: none;
+}
+.action-btn:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-light); }
+.action-ic { font-size: 18px; }
+
+/* INFO ROWS */
+.info-row {
+  display: flex; justify-content: space-between;
+  padding: 9px 0; border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.info-row:last-child { border-bottom: none; padding-bottom: 0; }
+.info-row .ik { color: var(--text2); }
+.info-row .iv { color: var(--text); font-weight: 600; }
+
+/* COMING SOON */
+.coming {
+  text-align: center; padding: 28px 20px;
+  color: var(--text3); font-size: 13px;
+}
+.coming .ic { font-size: 32px; margin-bottom: 8px; }
+
+/* MATRIC BADGE */
+.matric-badge {
+  font-family: monospace;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 2px 8px;
+  font-size: 12px; color: var(--brand); font-weight: 600;
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="dashboard.html">
+    <div class="nav-badge">C28</div>
+    <span class="nav-name">CPE Connect</span>
+  </a>
+  <div class="nav-right">
+    <div class="nav-avatar" id="navAvatar"></div>
+    <button class="btn-logout" onclick="logout()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- WELCOME -->
+  <div class="welcome">
+    <div class="welcome-left">
+      <h2 id="welcomeMsg">Welcome back! 👋</h2>
+      <p id="welcomeSub">You're logged into CPE C28 Connect.</p>
+      <span class="welcome-tag" id="welcomeRole">Student · 200 Level</span>
+    </div>
+    <div class="welcome-avatar" id="welcomeAvatar"></div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat"><div class="stat-n blue">85</div><div class="stat-l">Class Members</div></div>
+    <div class="stat"><div class="stat-n green">0</div><div class="stat-l">New Announcements</div></div>
+    <div class="stat"><div class="stat-n">0</div><div class="stat-l">Resources Available</div></div>
+    <div class="stat"><div class="stat-n">0</div><div class="stat-l">Upcoming Events</div></div>
+  </div>
+
+  <!-- GRID -->
+  <div class="grid2">
+
+    <!-- PROFILE SUMMARY -->
+    <div class="card">
+      <div class="card-head">👤 Your Profile</div>
+      <div id="profileInfo">
+        <div class="info-row"><span class="ik">Name</span><span class="iv" id="pName">—</span></div>
+        <div class="info-row"><span class="ik">Matric</span><span class="iv"><span class="matric-badge" id="pMatric">—</span></span></div>
+        <div class="info-row"><span class="ik">Level</span><span class="iv" id="pLevel">—</span></div>
+        <div class="info-row"><span class="ik">Birthday</span><span class="iv" id="pDob">—</span></div>
+        <div class="info-row"><span class="ik">State</span><span class="iv" id="pState">—</span></div>
+        <div class="info-row"><span class="ik">Email</span><span class="iv" id="pEmail">—</span></div>
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="card">
+      <div class="card-head">⚡ Quick Actions</div>
+      <div class="actions">
+        <a class="action-btn" href="#"><span class="action-ic">📚</span>Resources</a>
+        <a class="action-btn" href="#"><span class="action-ic">📢</span>Announcements</a>
+        <a class="action-btn" href="#"><span class="action-ic">👥</span>Directory</a>
+        <a class="action-btn" href="#"><span class="action-ic">💬</span>Discussions</a>
+        <a class="action-btn" href="#"><span class="action-ic">📅</span>Timetable</a>
+        <a class="action-btn" href="#"><span class="action-ic">🎓</span>GPA Calc</a>
+      </div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div class="card">
+      <div class="card-head">📢 Announcements</div>
+      <div class="coming">
+        <div class="ic">📭</div>
+        No announcements yet. Check back soon.
+      </div>
+    </div>
+
+    <!-- ACTIVITY -->
+    <div class="card">
+      <div class="card-head">🔔 Recent Activity</div>
+      <div class="coming">
+        <div class="ic">💤</div>
+        Nothing new yet. Activity will appear here.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── LOAD USER FROM SESSION ──
+const raw = sessionStorage.getItem('cpe_user');
+if (!raw) {
+  // Not logged in — redirect
+  window.location.href = 'auth.html';
+}
+
+const user = JSON.parse(raw || '{}');
+
+// Welcome card
+document.getElementById('welcomeMsg').textContent =
+  'Welcome' + (user.firstName ? ', ' + user.firstName : '') + '! 👋';
+document.getElementById('welcomeSub').textContent =
+  'You\'re signed in to CPE C28 Connect. Here\'s your dashboard.';
+document.getElementById('welcomeRole').textContent =
+  (user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Student') +
+  (user.level ? ' · ' + user.level + ' Level' : '');
+
+// Avatar
+const initials = ((user.firstName||'')[0]||'') + ((user.lastName||'')[0]||'');
+const avatarHTML = user.photoURL
+  ? `<img src="${user.photoURL}" alt="photo" />`
+  : initials.toUpperCase();
+
+document.getElementById('welcomeAvatar').innerHTML = avatarHTML;
+document.getElementById('navAvatar').innerHTML     = avatarHTML;
+
+// Profile card
+document.getElementById('pName').textContent   = user.fullName || '—';
+document.getElementById('pMatric').textContent = user.matricNumber || '—';
+document.getElementById('pLevel').textContent  = user.level ? user.level + ' Level' : '—';
+document.getElementById('pDob').textContent    = user.dateOfBirth
+  ? new Date(user.dateOfBirth).toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' })
+  : '—';
+document.getElementById('pState').textContent  = user.state || '—';
+document.getElementById('pEmail').textContent  = user.email || '—';
+
+function logout() {
+  sessionStorage.removeItem('cpe_user');
+  window.location.href = 'auth.html';
+}
+</script>
+</body>
+</html>
